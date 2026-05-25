@@ -41,16 +41,33 @@ class MarketBars:
         )
 
 
+def _read_close_csv(path: str | Path) -> pd.DataFrame:
+    """
+    Унифицированное чтение минутных баров. Допускаются варианты заголовков:
+        time/Time, close/Close, datetime/Datetime, date+time.
+    Возвращает DataFrame с одним столбцом 'close' и DatetimeIndex.
+    """
+    raw = pd.read_csv(path)
+    cols = {c.lower(): c for c in raw.columns}
+    time_col = cols.get("time") or cols.get("datetime") or cols.get("timestamp") or cols.get("date")
+    close_col = cols.get("close")
+    if time_col is None or close_col is None:
+        raise ValueError(f"Cannot find time/close columns in {path}: have {list(raw.columns)}")
+    raw[time_col] = pd.to_datetime(raw[time_col])
+    out = raw[[time_col, close_col]].rename(
+        columns={time_col: "time", close_col: "close"}
+    ).set_index("time").sort_index()
+    return out
+
+
 def load_from_csv(path_y: str | Path, path_x: str | Path) -> MarketBars:
     """
-    Загружает два CSV-файла с колонками ['time', 'close'] и приводит их
-    к общему индексу по времени (inner join).
+    Загружает два CSV-файла (y = ведомый Nasdaq, x = ведущий S&P 500) и
+    выравнивает их по общему индексу времени (inner join).
     """
-    df_y = pd.read_csv(path_y, parse_dates=["time"]).set_index("time")
-    df_x = pd.read_csv(path_x, parse_dates=["time"]).set_index("time")
-    df = df_y[["close"]].rename(columns={"close": "y"}).join(
-        df_x[["close"]].rename(columns={"close": "x"}), how="inner"
-    ).dropna()
+    df_y = _read_close_csv(path_y).rename(columns={"close": "y"})
+    df_x = _read_close_csv(path_x).rename(columns={"close": "x"})
+    df = df_y.join(df_x, how="inner").dropna()
     return MarketBars(
         timestamps=df.index,
         price_y=df["y"].to_numpy(dtype=np.float64),
