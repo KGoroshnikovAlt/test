@@ -31,6 +31,8 @@ class Position:
     entry_price_x: float
     entry_bar: int                          # индекс минутного бара входа
     margin_locked: float                    # маржа, заблокированная под сделку
+    entry_z: float = 0.0                    # значение Z в момент входа
+    entry_z_sigma: float = 1.0              # текущая σ Z в момент входа (для стопа)
 
     def bars_open(self, current_bar: int) -> int:
         return current_bar - self.entry_bar
@@ -92,6 +94,8 @@ class RiskManager:
         price_y: float,
         price_x: float,
         current_bar: int,
+        entry_z: float = 0.0,
+        entry_z_sigma: float = 1.0,
     ) -> bool:
         if self.halted or self.position is not None or side == "flat":
             return False
@@ -118,6 +122,8 @@ class RiskManager:
             entry_price_x=price_x,
             entry_bar=current_bar,
             margin_locked=total_margin,
+            entry_z=entry_z,
+            entry_z_sigma=entry_z_sigma,
         )
         return True
 
