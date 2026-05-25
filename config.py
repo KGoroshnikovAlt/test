@@ -45,8 +45,14 @@ class Config:
 
     # ---------- Longstaff–Schwartz ----------
     LS_TRAINING_PATHS: int = 2000          # число обучающих траекторий
-    LS_HORIZON: int = 60                   # максимальный горизонт удержания, минут
+    LS_HORIZON: int = 30                   # максимальный горизонт удержания, минут
     LS_RIDGE: float = 1e-3                 # L2-регуляризация регрессии
+
+    # ---------- Сценарий "log-spread" и стоп-лосс ----------
+    USE_LOG_PRICES: bool = True            # Калман по log P → стационарная связка
+    ROLLING_ZSTD_WINDOW: int = 1440        # окно для скользящих μ/σ Z, минут (≈ 1 сутки)
+    ENTRY_Z_THRESHOLD: float = 2.0         # порог входа по rolling-z
+    STOP_LOSS_Z: float = 2.5               # стоп-лосс: |Z - Z_entry| ≥ 2.5σ → выход
 
     # ---------- Прочее ----------
     RANDOM_SEED: int = 42
